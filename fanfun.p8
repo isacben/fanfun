@@ -16,7 +16,10 @@ function _init()
 	p_flip=false
 	p_onground=true
 	p_jumping=false
+	p_jump=false
+	jbuffer=0
 	p_flying=false
+	j_pressed=false
 	
 	gravity=0.2
 	initial_acc=-2.6994
@@ -25,7 +28,7 @@ function _init()
 	fans={}
 	addfan(20,90)
 	addfan(40,40)
-	addfan(82,90)
+	--addfan(82,90)
 	debug=""	
 end
 
@@ -100,7 +103,7 @@ function game()
 	end
 	
 	spr(1,p_x,p_y,1,1,p_flip)
-	cprint("press ❎ to game over",122,7)
+	--cprint("press ❎ to game over",122,7)
 end
 
 --gameover screen
@@ -131,6 +134,8 @@ function p_move()
 	--local lastpx=p_x
 	p_x+=p_dx
 	
+	
+	p_ay=gravity
 	if hit(p_x+p_dx,p_y,7,7) then
   if p_dx<0 then
   	p_x=(flr((p_x+p_dx)/8)+1)*8
@@ -139,52 +144,44 @@ function p_move()
   end
   p_dx=0
  end
-	
-	
-	
-	
-	--https://www.lexaloffle.com/bbs/?tid=43527
-	if btn(4) and p_onground then
-		p_ay=initial_acc
-		p_onground=false
-		p_jumping=true
-	elseif btn(4) and p_jumping then
-		p_ay+=alpha
-		if p_ay>gravity then
-			p_ay=gravity
-			p_jumping=false
-		end
-	else 
-		if p_flying then
+
+
+	local jump=btn(4) and not p_jump
+	p_jump=btn(4)
+	if (jump) and p_onground then
+ 	jbuffer=4
+ elseif jbuffer>0 then
+ 	jbuffer-=1
+ end
+ 
+ 
+ if p_flying then
 			p_ay=0
 			p_vy=-1
-		else
-			p_ay=gravity
-			p_jumping=false
-		end
 	end
+ 
+ -- jump
+ if jbuffer>0 then
+  jbuffer=0
+  p_vy=-3
+  p_onground=false
+ end
 	
 	p_vy+=p_ay
+	p_y+=p_vy
 		
 	if hit(p_x,p_y+p_vy,7,7) then
  	if p_vy>0 then
  		p_onground=true
+  	p_ay=0
   	p_y=flr((p_y+p_vy)/8)*8
   else
   	p_y=(flr((p_y+p_vy)/8)+1)*8
   end
   p_vy=0
-  
 	end
- 
- debug=p_vy
- 
- 
- p_y+=p_vy
- 
- 
- 
 end
+
 
 function fly()
 	for fan in all(fans) do
@@ -192,20 +189,11 @@ function fly()
 			p_x+1<fan.x+8 and
 			p_y<fan.y
 			then
-				
-			
-			
-			--if hit(p_x,p_y+p_vy,7,7) then
-				--p_vy=0
-				--p_flying=false
-		--	end
-			
 			p_onground=false
 			p_flying=true
 			break
 		else
-			p_flying=false
-			
+			p_flying=false			
 		end
 	end
 end
